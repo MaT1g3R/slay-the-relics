@@ -3,12 +3,11 @@ package api
 import (
 	"context"
 	"errors"
-	"strings"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"strings"
+	"time"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -103,13 +102,12 @@ func (a *API) postMessageHandler(c *gin.Context) {
 	err = a.broadcaster.Broadcast(ctx, time.Duration(req.Delay)*time.Millisecond, streamer, req.MessageType, message)
 	timeout := &errors2.Timeout{}
 	if errors.As(err, &timeout) {
-		c.Data(102, "application/json", []byte("Success\n"))
+		c.Data(202, "application/json; charset=utf-8", []byte("Success\n"))
 		return
 	}
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.Data(200, "application/json", []byte("Success\n"))
+	c.Data(200, "application/json; charset=utf-8", []byte("Success\n"))
 }

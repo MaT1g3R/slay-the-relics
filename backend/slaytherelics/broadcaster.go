@@ -162,7 +162,7 @@ func (s *sender) send(ctx context.Context, typ int, m map[string]any) (err error
 		return s.broadcaster.messages.SendMessage(ctx, s.broadcasterID, typ, m)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*10)
 	defer cancel()
 
 	select {
