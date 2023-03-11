@@ -103,6 +103,8 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 	defer o11y.End(&span, &err)
 	span.SetAttributes(attribute.String("broadcaster_id", broadcasterID))
 
+	counter, _ := o11y.Meter.Int64Counter("twitch.post_extension_pubsub.count")
+
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
 
@@ -144,11 +146,27 @@ func (t *Twitch) PostExtensionPubSub(ctx context.Context, broadcasterID, message
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		if counter != nil {
+			counter.Add(
+				ctx, 1,
+				attribute.String("error", err.Error()),
+				attribute.Int("status_code", -1),
+				attribute.String("broadcaster_id", broadcasterID),
+			)
+		}
 		return err
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
+	if counter != nil {
+		counter.Add(
+			ctx, 1,
+			attribute.String("error", ""),
+			attribute.Int("status_code", resp.StatusCode),
+			attribute.String("broadcaster_id", broadcasterID),
+		)
+	}
 
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 	if resp.StatusCode > 399 {
