@@ -103,7 +103,7 @@ func (a *API) postMessageHandler(c *gin.Context) {
 	err = a.broadcaster.Broadcast(ctx, time.Duration(req.Delay)*time.Millisecond, streamer, req.MessageType, message)
 	timeout := &errors2.Timeout{}
 	if errors.As(err, &timeout) {
-		c.JSON(429, gin.H{"error": err.Error()})
+		c.String(102, "Success")
 		return
 	}
 	if err != nil {
@@ -111,5 +111,5 @@ func (a *API) postMessageHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{})
+	c.String(200, "Success")
 }
