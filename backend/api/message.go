@@ -3,11 +3,12 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-	"strings"
-	"time"
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
