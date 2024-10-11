@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -13,17 +12,14 @@ import (
 
 const WILDCARDS = "0123456789abcdefghijklmnopqrstvwxyzABCDEFGHIJKLMNOPQRSTVWXYZ_`[]/^%?@><=-+*:;,.()#$!'{}~"
 
-var compressionWildcardRegex []*regexp.Regexp
+var compressionWildcardReplacements []string = generateWildcardReplacements()
 
-func init() {
-	escapeRegex := regexp.MustCompile(`[-\/\\^$*+?.()|[\]{}]`)
-
-	compressionWildcardRegex = make([]*regexp.Regexp, 0, len(WILDCARDS))
+func generateWildcardReplacements() []string {
+	replacements := make([]string, 0, len(WILDCARDS))
 	for i := range WILDCARDS {
-		wildCard := fmt.Sprintf("&%c", WILDCARDS[i])
-		escaped := escapeRegex.ReplaceAllString(wildCard, "\\$&")
-		compressionWildcardRegex = append(compressionWildcardRegex, regexp.MustCompile(escaped))
+		replacements = append(replacements, fmt.Sprintf("&%c", WILDCARDS[i]))
 	}
+	return replacements
 }
 
 func (a *API) getDeckHandler(c *gin.Context) {
@@ -82,11 +78,11 @@ func decompress(s string) (string, error) {
 	compressionDict := strings.Split(parts[0], "|")
 	text := parts[1]
 
+	replacerDict := make([]string, 0, len(compressionDict)*2)
 	for i := len(compressionDict) - 1; i >= 0; i-- {
-		word := compressionDict[i]
-		text = compressionWildcardRegex[i].ReplaceAllString(text, word)
+		replacerDict = append(replacerDict, compressionWildcardReplacements[i], compressionDict[i])
 	}
-	return text, nil
+	return strings.NewReplacer(replacerDict...).Replace(text), nil
 }
 
 func parseCommaDelimitedIntegerArray(s string) ([]int, error) {
