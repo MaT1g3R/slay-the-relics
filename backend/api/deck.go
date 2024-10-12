@@ -1,10 +1,12 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -34,11 +36,17 @@ func (a *API) getDeckHandler(c *gin.Context) {
 		return
 	}
 
-	keys := make([]string, 0, len(d))
-	for k := range d {
+	c.Data(200, "text/plain", formatDeck(d))
+}
+
+// formatDeck convert deck card count map into readable string
+func formatDeck(deck map[string]int) []byte {
+	keys := make([]string, 0, len(deck))
+	for k := range deck {
 		keys = append(keys, k)
 	}
 
+	// put Ascender's Bane at the end
 	slices.SortFunc(keys, func(i, j string) bool {
 		if i == "Ascender's Bane" {
 			return false
@@ -49,15 +57,15 @@ func (a *API) getDeckHandler(c *gin.Context) {
 		return i < j
 	})
 
-	result := strings.Builder{}
-	for _, k := range keys {
-		result.WriteString(k)
-		result.WriteString(" x")
-		result.WriteString(fmt.Sprint(d[k]))
-		result.WriteString("\n")
+	buf := bytes.NewBuffer(make([]byte, 0, 2048)) // typically ends up being around 2KB (for the "large deck" case)
+	for _, key := range keys {
+		buf.Write([]byte(key))
+		buf.Write([]byte(" x"))
+		buf.WriteString(strconv.Itoa(deck[key]))
+		buf.Write([]byte("\n"))
 	}
 
-	c.Data(200, "text/plain", []byte(result.String()))
+	return buf.Bytes()
 }
 
 func escapeRegexp(s string) string {
