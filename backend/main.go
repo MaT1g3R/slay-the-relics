@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/MaT1g3R/slaytherelics/api"
+	"github.com/MaT1g3R/slaytherelics/broadcaster"
 	"github.com/MaT1g3R/slaytherelics/client"
 	"github.com/MaT1g3R/slaytherelics/config"
 	"github.com/MaT1g3R/slaytherelics/o11y"
@@ -59,13 +60,13 @@ func initialize(ctx context.Context, cfg config.Config) (_ *api.API, cancel func
 	rdb := client.NewRedis(cfg.RedisAddr)
 	users := slaytherelics.NewUsers(twitchClient, rdb)
 	messages := slaytherelics.NewMessages(twitchClient)
-	broadcaster, err := slaytherelics.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
+	broadcaster, err := broadcaster.NewBroadcaster(messages, 20, time.Second*3, time.Minute)
 	if err != nil {
 		return nil, cancel, err
 	}
 
 	span.AddEvent("starting server")
-	a, err := api.New(twitchClient, users, broadcaster)
+	a, err := api.New(users, broadcaster)
 	return a, cancel, err
 }
 

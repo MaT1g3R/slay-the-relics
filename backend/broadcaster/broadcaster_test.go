@@ -1,4 +1,4 @@
-package slaytherelics
+package broadcaster
 
 import (
 	"context"
@@ -23,7 +23,7 @@ type pubSubStub struct {
 }
 
 func (p *pubSubStub) SendMessage(ctx context.Context,
-	broadcasterID string, messageType int, message map[string]any) error {
+	broadcasterID string, messageType int, message interface{}) error {
 
 	js, err := json.Marshal(message)
 	if err != nil {

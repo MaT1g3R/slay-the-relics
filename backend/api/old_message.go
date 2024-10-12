@@ -10,18 +10,8 @@ import (
 
 	errors2 "github.com/MaT1g3R/slaytherelics/errors"
 	"github.com/MaT1g3R/slaytherelics/o11y"
+	"github.com/MaT1g3R/slaytherelics/slaytherelics"
 )
-
-type RequestMessage struct {
-	MessageType int `json:"msg_type"`
-	Streamer    struct {
-		Login  string `json:"login"`
-		Secret string `json:"secret"`
-	} `json:"streamer"`
-	Metadata map[string]any `json:"meta"`
-	Delay    int            `json:"delay"`
-	Message  any            `json:"message"`
-}
 
 func (a *API) oldAuthenticate(c *gin.Context, ctx context.Context, login, secret string) (_ string, err error) {
 	ctx, span := o11y.Tracer.Start(ctx, "api: oldAuthenticate")
@@ -65,31 +55,25 @@ func (a *API) postOldMessageHandler(c *gin.Context) {
 	ctx, span := o11y.Tracer.Start(c.Request.Context(), "api: old post message")
 	defer o11y.End(&span, &err)
 
-	req := RequestMessage{}
-	err = c.BindJSON(&req)
+	// same message format, just different auth call
+	pubSubMessage := slaytherelics.PubSubMessage{}
+	err = c.BindJSON(&pubSubMessage)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	message := make(map[string]any)
-	switch t := req.Message.(type) {
-	case string:
-		if len(t) != 0 {
-			c.JSON(400, gin.H{})
-			return
-		}
-	case map[string]any:
-		message = t
-	default:
-		c.JSON(400, gin.H{})
+	// do some initial validation on the parsed message
+	if pubSubMessage.Streamer.Login == "" || pubSubMessage.Streamer.Secret == "" {
+		err := &errors2.AuthError{Err: errors.New("missing login or secret")}
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	login := strings.ToLower(req.Streamer.Login)
-	streamer, err := a.oldAuthenticate(c, ctx, login, req.Streamer.Secret)
+	login := strings.ToLower(pubSubMessage.Streamer.Login)
+	streamer, err := a.oldAuthenticate(c, ctx, login, pubSubMessage.Streamer.Secret)
 	if err != nil {
 		return
 	}
-	err = a.broadcast(c, ctx, req, streamer, message)
+	err = a.broadcast(c, ctx, pubSubMessage, streamer)
 }

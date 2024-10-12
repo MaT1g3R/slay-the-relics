@@ -38,7 +38,7 @@ func stringChunks(s string, chunkSize int) []string {
 }
 
 func (m *Messages) SendMessage(ctx context.Context,
-	broadcasterID string, messageType int, message map[string]any) (err error) {
+	broadcasterID string, messageType int, message interface{}) (err error) {
 
 	ctx, span := o11y.Tracer.Start(ctx, "messages: send message")
 	defer o11y.End(&span, &err)
